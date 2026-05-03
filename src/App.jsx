@@ -484,7 +484,7 @@ ${resumeText || '（未提供）'}`;
             <div className="content-section">
               <h3>黑话翻译</h3>
               {data.jargon.map((item, i) => (
-                <div key={i} style={{ background: '#fafafa', padding: '12px', borderRadius: 8, marginBottom: 8, borderLeft: '3px solid var(--primary)' }}>
+                <div key={i} className="surface-panel surface-panel-accent" style={{ padding: '12px', marginBottom: 8 }}>
                   <div style={{ marginBottom: 4 }}>
                     <span style={{ color: 'var(--primary)', fontWeight: 600 }}>{item.word}</span> 
                     <span style={{ color: 'var(--text-muted)', margin: '0 8px' }}>→</span>
@@ -548,7 +548,7 @@ ${resumeText || '（未提供）'}`;
               <h3>一个月交付样例（5个）</h3>
               <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginTop: 8 }}>
                 {data.deliverables.map((d, i) => (
-                  <div key={i} style={{ background: '#f8f9fc', padding: '8px 12px', borderRadius: 6, border: '1px solid var(--border-color)' }}>
+                  <div key={i} className="surface-panel" style={{ padding: '8px 12px' }}>
                     {d}
                   </div>
                 ))}
@@ -603,14 +603,14 @@ ${resumeText || '（未提供）'}`;
 
             <div className="content-section">
               <h3>三、学习与补齐建议</h3>
-              <div style={{ background: '#fafafa', padding: 20, borderRadius: 8, border: '1px solid var(--border-color)' }}>
+              <div className="surface-panel" style={{ padding: 20 }}>
                 <div style={{ marginBottom: 16 }}>
                   <strong style={{ color: 'var(--primary)', display: 'block', marginBottom: 4 }}>📝 简历即时补救：</strong>
                   <p>{data.action.resumeFix}</p>
                 </div>
                 <div style={{ marginBottom: 16 }}>
                   <strong style={{ color: 'var(--primary)', display: 'block', marginBottom: 4 }}>💬 面试侧面化解话术：</strong>
-                  <p style={{ fontStyle: 'italic', color: '#0369a1', background: '#e0f2fe', padding: '12px 16px', borderRadius: 6, borderLeft: '4px solid #0284c7' }}>
+                  <p className="info-panel" style={{ fontStyle: 'italic', padding: '12px 16px' }}>
                     "{data.action.interviewTalk}"
                   </p>
                 </div>
@@ -629,7 +629,7 @@ ${resumeText || '（未提供）'}`;
           <div>
             <div className="content-section">
               <h3>最终可投递版本（智能重构）</h3>
-              <div style={{ background: '#fafafa', padding: '20px', borderRadius: 8, border: '1px solid var(--border-color)', fontSize: 14, lineHeight: 1.8, whiteSpace: 'pre-wrap' }}>
+              <div className="surface-panel" style={{ padding: '20px', fontSize: 14, lineHeight: 1.8, whiteSpace: 'pre-wrap' }}>
                 {data.finalResume.map((part, i) => {
                   if (part.type === 'replace') {
                     return (
@@ -677,7 +677,7 @@ ${resumeText || '（未提供）'}`;
               <h3>改动汇总</h3>
               <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
                 {data.changes.map((c, i) => (
-                  <div key={i} style={{ background: '#fff', border: '1px solid var(--border-color)', borderRadius: 8, padding: 16 }}>
+                  <div key={i} className="surface-panel" style={{ padding: 16 }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
                       <span style={{ 
                         background: c.type === '替换' ? '#e0f2fe' : '#dcfce7', 
@@ -694,7 +694,7 @@ ${resumeText || '（未提供）'}`;
                     <div style={{ fontSize: 13, color: 'var(--text-muted)', marginBottom: 4 }}>
                       <span style={{ color: 'var(--text-main)', fontWeight: 500 }}>💡 修改逻辑：</span>{c.logic}
                     </div>
-                    <div style={{ fontSize: 13, color: '#b91c1c', background: '#fef2f2', padding: '6px 10px', borderRadius: 6, marginTop: 12 }}>
+                    <div className="danger-inline" style={{ fontSize: 13, padding: '6px 10px', marginTop: 12 }}>
                       <strong>📝 建议补充槽位：</strong>{c.slot}
                     </div>
                   </div>
@@ -720,7 +720,7 @@ ${resumeText || '（未提供）'}`;
             </div>
             <div className="content-section">
               <h3 style={{ color: '#b91c1c' }}>⚠️ 潜在风险 (毒舌猎头诊断)</h3>
-              <div style={{ background: '#fef2f2', padding: 16, borderRadius: 8, border: '1px solid #fecaca' }}>
+              <div className="danger-panel" style={{ padding: 16 }}>
                 <div style={{ marginBottom: 12 }}>
                   <strong style={{ color: '#b91c1c' }}>⛔️ 硬伤：</strong>
                   <p style={{ marginTop: 4 }}>{data.risks.hardFlaws}</p>
@@ -733,7 +733,7 @@ ${resumeText || '（未提供）'}`;
             </div>
             <div className="content-section">
               <h3 style={{ color: 'var(--primary)' }}>⚖️ 综合结论</h3>
-              <div style={{ background: '#f3f0ff', padding: 20, borderRadius: 8, border: '1px solid #ddd6fe', textAlign: 'center' }}>
+              <div className="surface-panel conclusion-panel" style={{ padding: 20, textAlign: 'center' }}>
                 <div style={{ fontSize: 24, fontWeight: 'bold', color: 'var(--primary)', marginBottom: 12 }}>
                   {data.conclusion.decision}
                 </div>
@@ -785,7 +785,7 @@ ${resumeText || '（未提供）'}`;
             />
           </div>
 
-          <div className="input-section">
+          <div className="input-section resume-section">
             <div className="input-label" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
               <span>简历原文 (仅匹配需要)</span>
               <div style={{ display: 'flex', gap: 12 }}>
@@ -799,7 +799,7 @@ ${resumeText || '（未提供）'}`;
               </div>
             </div>
             <textarea 
-              className="text-area small"
+              className="text-area resume-textarea"
               placeholder="在此粘贴简历文本，或点击上方导入 PDF/Word..."
               value={resumeText}
               onChange={(e) => setResumeText(e.target.value)}
@@ -845,7 +845,7 @@ ${resumeText || '（未提供）'}`;
           </div>
 
           {results[activeTab] && !isGenerating && (
-            <div style={{ padding: '16px 24px', borderTop: '1px solid var(--border-color)', display: 'flex', gap: 16, background: '#fafafa' }}>
+            <div className="result-toolbar" style={{ padding: '16px 24px', display: 'flex', gap: 16 }}>
               <button className="btn-icon" style={{ fontSize: 14 }}>
                 <Copy size={16} /> 复制输出
               </button>
