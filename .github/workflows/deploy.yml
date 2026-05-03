@@ -1,0 +1,32 @@
+name: Deploy Vite Site
+
+on:
+  push:
+    branches: [main] # 当你向 main 分支推送代码时触发
+
+permissions:
+  contents: write # 允许 Action 写入代码，用于发布网页
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Install Dependencies
+        run: npm install
+
+      - name: Build Project
+        run: npm run build
+
+      - name: Deploy to GitHub Pages
+        uses: peaceiris/actions-gh-pages@v3
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./dist # 将编译生成的 dist 文件夹内容发布
