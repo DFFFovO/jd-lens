@@ -2,10 +2,12 @@ name: Deploy Vite Site
 
 on:
   push:
-    branches: [main] # 当你向 main 分支推送代码时触发
+    branches: [main]
 
 permissions:
-  contents: write # 允许 Action 写入代码，用于发布网页
+  contents: write
+  pages: write
+  id-token: write
 
 jobs:
   build-and-deploy:
@@ -17,7 +19,8 @@ jobs:
       - name: Set up Node
         uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: 18 # 👈 换成更稳的 18
+          cache: 'npm'
 
       - name: Install Dependencies
         run: npm install
@@ -29,4 +32,4 @@ jobs:
         uses: peaceiris/actions-gh-pages@v3
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
-          publish_dir: ./dist # 将编译生成的 dist 文件夹内容发布
+          publish_dir: ./dist
