@@ -1,0 +1,588 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI PM 简历重构 | JD Lens</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary: #7b5ee4;
+            --secondary: #3b82f6;
+            --dark: #0f172a;
+            --darker: #020617;
+            --text-main: #f8fafc;
+            --text-muted: #94a3b8;
+        }
+
+        body, html {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            background-color: var(--darker);
+            color: var(--text-main);
+            overflow: hidden;
+        }
+
+        /* 动态背景 */
+        .bg-gradient {
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: radial-gradient(circle at 15% 50%, rgba(123, 94, 228, 0.15), transparent 40%),
+                        radial-gradient(circle at 85% 30%, rgba(59, 130, 246, 0.15), transparent 40%);
+            z-index: 0;
+            animation: pulseBg 10s ease-in-out infinite alternate;
+        }
+
+        @keyframes pulseBg {
+            0% { transform: scale(1); opacity: 0.8; }
+            100% { transform: scale(1.1); opacity: 1; }
+        }
+
+        /* 幻灯片容器 */
+        .slides-container {
+            position: relative;
+            width: 100vw;
+            height: 100vh;
+            z-index: 10;
+        }
+
+        .slide {
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 100%;
+            opacity: 0;
+            visibility: hidden;
+            transition: all 0.8s cubic-bezier(0.16, 1, 0.3, 1);
+            transform: translateY(20px) scale(0.98);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 4rem;
+            box-sizing: border-box;
+        }
+
+        .fragment {
+            opacity: 0;
+            visibility: hidden;
+            transform: translateY(20px);
+            transition: all 0.5s ease;
+        }
+        .fragment.visible {
+            opacity: 1;
+            visibility: visible;
+            transform: translateY(0);
+        }
+
+        .slide.active {
+            opacity: 1;
+            visibility: visible;
+            transform: translateY(0) scale(1);
+        }
+
+        .slide.prev {
+            transform: translateY(-20px) scale(0.98);
+        }
+
+        /* 玻璃拟态卡片 */
+        .glass-panel {
+            background: rgba(15, 23, 42, 0.6);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 24px;
+            padding: 3rem;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+            width: 100%;
+            max-width: 1200px;
+        }
+
+        /* 导航控件 */
+        .controls {
+            position: fixed;
+            bottom: 2rem;
+            left: 50%;
+            transform: translateX(-50%);
+            display: flex;
+            gap: 1rem;
+            z-index: 100;
+            background: rgba(0,0,0,0.4);
+            padding: 0.5rem 1rem;
+            border-radius: 999px;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255,255,255,0.05);
+        }
+
+        .btn-nav {
+            background: transparent;
+            border: none;
+            color: var(--text-muted);
+            cursor: pointer;
+            width: 40px; height: 40px;
+            border-radius: 50%;
+            display: flex; align-items: center; justify-content: center;
+            transition: all 0.2s;
+        }
+        .btn-nav:hover {
+            background: rgba(255,255,255,0.1);
+            color: #fff;
+        }
+        .btn-nav:disabled {
+            opacity: 0.3; cursor: not-allowed;
+        }
+
+        .progress-bar {
+            position: fixed;
+            top: 0; left: 0; height: 3px;
+            background: linear-gradient(90deg, var(--secondary), var(--primary));
+            z-index: 100;
+            transition: width 0.3s ease;
+        }
+
+        /* 强调文字 */
+        .text-gradient {
+            background: linear-gradient(135deg, #fff 0%, #a5b4fc 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        .text-highlight {
+            color: var(--primary);
+        }
+
+        /* 布局组件 */
+        .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 3rem; }
+        .grid-4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 1.5rem; }
+        
+        .feature-card {
+            background: rgba(255,255,255,0.03);
+            border: 1px solid rgba(255,255,255,0.05);
+            border-radius: 16px;
+            padding: 2rem;
+            transition: transform 0.3s;
+        }
+        .feature-card:hover {
+            transform: translateY(-5px);
+            border-color: rgba(123, 94, 228, 0.4);
+            background: rgba(123, 94, 228, 0.05);
+        }
+
+        .number-badge {
+            display: inline-flex;
+            align-items: center; justify-content: center;
+            width: 32px; height: 32px;
+            border-radius: 8px;
+            background: rgba(123, 94, 228, 0.2);
+            color: #c4b5fd;
+            font-weight: bold;
+            margin-bottom: 1rem;
+        }
+
+        /* 对比模型 */
+        .vs-container {
+            display: flex;
+            align-items: stretch;
+            gap: 2rem;
+        }
+        .vs-box {
+            flex: 1;
+            padding: 2rem;
+            border-radius: 16px;
+            position: relative;
+        }
+        .vs-box.old {
+            background: rgba(239, 68, 68, 0.05);
+            border: 1px dashed rgba(239, 68, 68, 0.3);
+        }
+        .vs-box.new {
+            background: rgba(16, 185, 129, 0.05);
+            border: 1px solid rgba(16, 185, 129, 0.3);
+            box-shadow: 0 0 30px rgba(16, 185, 129, 0.1);
+        }
+        .vs-badge {
+            position: absolute;
+            top: -12px; left: 24px;
+            padding: 4px 12px;
+            border-radius: 99px;
+            font-size: 12px; font-weight: bold;
+        }
+
+        .tag {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 99px;
+            font-size: 14px;
+            background: rgba(255,255,255,0.1);
+            margin: 4px;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="bg-gradient"></div>
+    <div class="progress-bar" id="progress"></div>
+
+    <div class="slides-container" id="slides">
+        
+        <!-- Slide 1: 封面 -->
+        <div class="slide active">
+            <div class="text-center">
+                <div class="inline-block mb-6 px-4 py-1.5 rounded-full border border-indigo-500/30 bg-indigo-500/10 text-indigo-300 text-sm tracking-wider font-semibold">
+                    AI PM RESUME REFACTORING
+                </div>
+                <h1 class="text-6xl md:text-7xl font-bold mb-6 text-gradient leading-tight">
+                    AI 时代，如何用 PM 思维<br/>重构你的求职“产品”？
+                </h1>
+                <p class="text-2xl text-slate-400 mb-12 font-light">
+                    从“转行小白”到“专业大牛”的 10 分钟蜕变
+                </p>
+                <div class="inline-flex items-center gap-4 text-slate-500">
+                    <img src="./avatar.png" alt="邓婷的头像" class="w-12 h-12 rounded-full border-2 border-indigo-500/50 object-cover shadow-lg" />
+                    <div class="text-left">
+                        <div class="font-bold text-slate-200">邓婷（小蝶）</div>
+                        <div class="text-sm">JD Lens 制作人</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Slide 2: 破局策略 -->
+        <div class="slide">
+            <div class="glass-panel w-full" style="padding-top: 2rem; padding-bottom: 1.5rem;">
+                <div class="text-sm font-bold text-indigo-400 tracking-widest mb-2 uppercase text-center">Core Strategy</div>
+                <h2 class="text-3xl font-bold mb-6 text-center">破局：拿到 AI PM 面试入场券的底层策略</h2>
+                
+                <div class="relative w-full max-w-3xl mx-auto h-64">
+                    <!-- Card 1 (默认显示) -->
+                    <div class="p-8 rounded-2xl bg-slate-900 border border-red-500/30 absolute inset-0 flex flex-col justify-center items-center text-center shadow-[0_0_40px_rgba(239,68,68,0.1)] z-10">
+                        <div class="text-red-400 font-bold mb-4 flex items-center gap-2 text-lg">
+                            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                            残酷的 6 秒钟
+                        </div>
+                        <h4 class="text-xl font-bold text-white mb-4">为什么要分享？</h4>
+                        <div class="text-5xl font-black text-white mb-4">6-10<span class="text-lg font-normal text-slate-400 ml-1">秒</span></div>
+                        <p class="text-slate-400 text-sm mb-6">面试官决定一份简历去留的平均时间。</p>
+                        <div class="text-sm text-red-300 bg-red-500/10 px-4 py-2 rounded-full border border-red-500/20">💡 面试没门票，才华全死掉。</div>
+                    </div>
+
+                    <!-- Card 2 -->
+                    <div class="fragment p-8 rounded-2xl bg-slate-900 border border-blue-500/30 absolute inset-0 flex flex-col justify-center items-center text-center shadow-[0_0_40px_rgba(59,130,246,0.1)] z-20">
+                        <div class="text-blue-400 font-bold mb-4 flex items-center gap-2 text-lg">
+                            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"></path></svg>
+                            目标受众
+                        </div>
+                        <h4 class="text-xl font-bold text-white mb-6">我们是谁？</h4>
+                        <p class="text-slate-300 text-lg mb-8">跨行转型、渴望成为 AI 产品经理的同路人。</p>
+                        <div class="text-sm text-blue-300 bg-blue-500/10 px-4 py-2 rounded-full border border-blue-500/20">💡 不缺转型决心，只缺通关门票。</div>
+                    </div>
+
+                    <!-- Card 3 -->
+                    <div class="fragment p-8 rounded-2xl bg-slate-900 border border-purple-500/30 absolute inset-0 flex flex-col justify-center items-center text-center shadow-[0_0_40px_rgba(168,85,247,0.1)] z-30">
+                        <div class="text-purple-400 font-bold mb-4 flex items-center gap-2 text-lg">
+                            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>
+                            扎心的现状
+                        </div>
+                        <h4 class="text-xl font-bold text-white mb-6">大家的痛点</h4>
+                        <p class="text-slate-300 text-lg mb-8">脑子里满是 AI 落地想法，下笔却全是“外行味儿”流水账。</p>
+                        <div class="text-sm text-purple-300 bg-purple-500/10 px-4 py-2 rounded-full border border-purple-500/20">💡 未见面试官，已遭系统淘汰。</div>
+                    </div>
+
+                    <!-- Card 4 -->
+                    <div class="fragment p-8 rounded-2xl bg-slate-900 border border-emerald-500/30 absolute inset-0 flex flex-col justify-center items-center text-center shadow-[0_0_40px_rgba(16,185,129,0.1)] z-40">
+                        <div class="text-emerald-400 font-bold mb-4 flex items-center gap-2 text-lg">
+                            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg>
+                            你的获益
+                        </div>
+                        <h4 class="text-xl font-bold text-white mb-8">今天的价值</h4>
+                        <ul class="text-slate-300 text-lg space-y-4 text-left">
+                            <li class="flex items-center gap-3"><span class="w-2 h-2 rounded-full bg-emerald-500"></span><strong class="text-emerald-300">标准重塑：</strong>掌握大厂黄金语态与格式。</li>
+                            <li class="flex items-center gap-3"><span class="w-2 h-2 rounded-full bg-emerald-500"></span><strong class="text-emerald-300">精准对齐：</strong>让简历像素级对齐 JD 的颗粒度。</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="mt-6 pt-4 border-t border-indigo-500/20 text-center">
+                    <p class="text-xl text-indigo-200 font-light tracking-wide italic">
+                        “简历，是你作为 PM 交付给市场的第一个产品。”
+                    </p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Slide 3: 观念对齐 -->
+        <div class="slide">
+            <div class="glass-panel">
+                <div class="text-sm font-bold text-indigo-400 tracking-widest mb-2 uppercase">Paradigm Shift</div>
+                <h2 class="text-4xl font-bold mb-12">观念对齐：简历是你的第一个“产品”</h2>
+                
+                <div class="grid-2 items-center">
+                    <div>
+                        <div class="space-y-6">
+                            <div class="flex gap-4 items-start p-4 rounded-xl bg-white/5 border border-white/5">
+                                <div class="w-12 h-12 shrink-0 rounded-lg bg-blue-500/20 flex items-center justify-center text-blue-400 font-bold text-xl">JD</div>
+                                <div>
+                                    <h4 class="text-xl font-bold text-white mb-2">= 需求文档 (PRD)</h4>
+                                    <p class="text-slate-400">你不是在找工作，你是在解决 HR 和业务部门的痛点。</p>
+                                </div>
+                            </div>
+                            <div class="flex gap-4 items-start p-4 rounded-xl bg-white/5 border border-white/5">
+                                <div class="w-12 h-12 shrink-0 rounded-lg bg-emerald-500/20 flex items-center justify-center text-emerald-400 font-bold text-xl">CV</div>
+                                <div>
+                                    <h4 class="text-xl font-bold text-white mb-2">= 解决方案 (Solution)</h4>
+                                    <p class="text-slate-400">用数据和逻辑证明，你是解决这个需求的最佳匹配方案。</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="feature-card text-center h-full flex flex-col justify-center border-indigo-500/30">
+                        <svg class="w-16 h-16 mx-auto mb-6 text-indigo-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M13 10V3L4 14h7v7l9-11h-7z" />
+                        </svg>
+                        <h3 class="text-2xl font-bold mb-4">PM 黄金法则</h3>
+                        <p class="text-lg text-slate-300">
+                            不要写 <span class="text-red-400 line-through">“我做了什么”</span><br/><br/>
+                            要写 <span class="text-emerald-400 font-bold">“我解决了什么问题，产生了什么价值”</span>
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Slide 3: 标准定义 -->
+        <div class="slide">
+            <div class="glass-panel w-full">
+                <div class="text-sm font-bold text-indigo-400 tracking-widest mb-2 uppercase">Standard Framework</div>
+                <h2 class="text-4xl font-bold mb-12">AI PM 简历的黄金结构</h2>
+                
+                <div class="grid-4">
+                    <div class="feature-card relative overflow-hidden group">
+                        <div class="absolute top-0 right-0 w-32 h-32 bg-blue-500/10 rounded-full blur-2xl -mr-16 -mt-16 group-hover:bg-blue-500/20 transition-all"></div>
+                        <div class="number-badge">01</div>
+                        <h3 class="text-xl font-bold text-white mb-3">项目描述 <span class="text-slate-500 text-sm font-normal">Context</span></h3>
+                        <p class="text-slate-400 text-sm leading-relaxed">一句话讲清业务背景与核心痛点。为什么要做这个项目？</p>
+                    </div>
+                    
+                    <div class="feature-card relative overflow-hidden group">
+                        <div class="absolute top-0 right-0 w-32 h-32 bg-purple-500/10 rounded-full blur-2xl -mr-16 -mt-16 group-hover:bg-purple-500/20 transition-all"></div>
+                        <div class="number-badge">02</div>
+                        <h3 class="text-xl font-bold text-white mb-3">产品角色 <span class="text-slate-500 text-sm font-normal">Role</span></h3>
+                        <p class="text-slate-400 text-sm leading-relaxed">明确在这个项目中的定位：产品总监、产品经理、产品助理</p>
+                    </div>
+                    
+                    <div class="feature-card relative overflow-hidden group">
+                        <div class="absolute top-0 right-0 w-32 h-32 bg-pink-500/10 rounded-full blur-2xl -mr-16 -mt-16 group-hover:bg-pink-500/20 transition-all"></div>
+                        <div class="number-badge">03</div>
+                        <h3 class="text-xl font-bold text-white mb-3">工作职责 <span class="text-slate-500 text-sm font-normal">Action</span></h3>
+                        <p class="text-slate-400 text-sm leading-relaxed">“动作 + 对象 + 工具”模型。<br/><span class="text-indigo-300">例：利用 RAG 架构优化知识库检索。</span></p>
+                    </div>
+
+                    <div class="feature-card relative overflow-hidden group">
+                        <div class="absolute top-0 right-0 w-32 h-32 bg-emerald-500/10 rounded-full blur-2xl -mr-16 -mt-16 group-hover:bg-emerald-500/20 transition-all"></div>
+                        <div class="number-badge">04</div>
+                        <h3 class="text-xl font-bold text-white mb-3">项目成果 <span class="text-slate-500 text-sm font-normal">Result</span></h3>
+                        <p class="text-slate-400 text-sm leading-relaxed">量化指标驱动。<br/>准确率提升、响应速度降低、成本节约。</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Slide 4: 降维打击 -->
+        <div class="slide">
+            <div class="glass-panel">
+                <div class="text-sm font-bold text-indigo-400 tracking-widest mb-2 uppercase">Dimensional Strike</div>
+                <h2 class="text-4xl font-bold mb-10">非产品经历的“PM 化”转译</h2>
+                <p class="text-slate-400 mb-8">核心方法：提取过往工作中的“逻辑链”，而非“动作条”。</p>
+
+                <div class="vs-container">
+                    <div class="vs-box old">
+                        <div class="vs-badge bg-red-500 text-white">Before</div>
+                        <div class="text-sm text-red-300 mb-4 font-bold">原始描述（财务/销售等跨行经历）</div>
+                        <p class="text-lg text-slate-300 italic">“负责日常数据统计，使用Excel做报表，并与客户沟通需求。”</p>
+                        <div class="mt-6 pt-6 border-t border-red-500/20 text-sm text-slate-400">
+                            HR 视角：流水线工人，缺乏系统思考能力。
+                        </div>
+                    </div>
+
+                    <div class="fragment flex items-center justify-center">
+                        <div class="w-12 h-12 rounded-full bg-slate-800 flex items-center justify-center text-slate-400 border border-slate-700">
+                            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 5l7 7-7 7M5 5l7 7-7 7"></path></svg>
+                        </div>
+                    </div>
+
+                    <div class="fragment vs-box new">
+                        <div class="vs-badge bg-emerald-500 text-white">After (PM 视角)</div>
+                        <div class="text-sm text-emerald-300 mb-4 font-bold">AI PM 化改写</div>
+                        <p class="text-lg text-white">“梳理核心数据核算业务逻辑<span class="text-emerald-400 text-sm ml-2 px-2 py-0.5 bg-emerald-500/20 rounded">(业务建模)</span>，<br/>通过引入自动化工具<span class="text-emerald-400 text-sm ml-2 px-2 py-0.5 bg-emerald-500/20 rounded">(技术赋能/提效)</span>，<br/>最终使流程流转效率提升，降低 30% 人工成本<span class="text-emerald-400 text-sm ml-2 px-2 py-0.5 bg-emerald-500/20 rounded">(商业价值)</span>。”</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Slide 5: JD Lens -->
+        <div class="slide">
+            <div class="glass-panel w-full">
+                <div class="grid-2 items-center">
+                    <div>
+                        <div class="text-sm font-bold text-indigo-400 tracking-widest mb-2 uppercase">The Ultimate Tool</div>
+                        <h2 class="text-4xl font-bold mb-6">JD Lens：你的 AI 简历导师</h2>
+                        <p class="text-xl text-slate-300 mb-8 border-l-4 border-indigo-500 pl-4">愿景：让每一份简历都能精准对齐 JD 颗粒度。</p>
+                        
+                        <div class="space-y-4">
+                            <div class="flex items-center gap-4">
+                                <div class="w-10 h-10 rounded-lg bg-purple-500/20 flex items-center justify-center text-purple-400"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg></div>
+                                <div>
+                                    <div class="font-bold text-white text-lg">岗位解码</div>
+                                    <div class="text-sm text-slate-400">大白话翻译黑话，看透 JD 背后的隐性需求。</div>
+                                </div>
+                            </div>
+                            <div class="flex items-center gap-4">
+                                <div class="w-10 h-10 rounded-lg bg-blue-500/20 flex items-center justify-center text-blue-400"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path></svg></div>
+                                <div>
+                                    <div class="font-bold text-white text-lg">智能改写</div>
+                                    <div class="text-sm text-slate-400">带逻辑解释的高亮 <code>{{替换}}</code> 策略，槽位精准填补。</div>
+                                </div>
+                            </div>
+                            <div class="flex items-center gap-4">
+                                <div class="w-10 h-10 rounded-lg bg-red-500/20 flex items-center justify-center text-red-400"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg></div>
+                                <div>
+                                    <div class="font-bold text-white text-lg">风险诊断</div>
+                                    <div class="text-sm text-slate-400">毒舌猎头视角测评，红黑榜提前预演面试压力。</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="relative">
+                        <!-- Mockup UI -->
+                        <div class="w-full h-80 rounded-xl bg-slate-900 border border-slate-700 shadow-2xl overflow-hidden flex flex-col">
+                            <div class="h-10 bg-slate-800 border-b border-slate-700 flex items-center px-4 gap-2">
+                                <div class="w-3 h-3 rounded-full bg-red-500"></div>
+                                <div class="w-3 h-3 rounded-full bg-yellow-500"></div>
+                                <div class="w-3 h-3 rounded-full bg-green-500"></div>
+                                <div class="ml-4 text-xs font-mono text-slate-400">JD Lens v1.0</div>
+                            </div>
+                            <div class="flex-1 p-6 text-sm font-mono text-slate-300 relative overflow-hidden">
+                                <div class="animate-pulse mb-4 w-3/4 h-4 bg-slate-800 rounded"></div>
+                                <div>
+                                    负责 <span class="bg-blue-500/20 text-blue-300 px-1 border-b border-blue-500/50 border-dashed cursor-pointer">搭建大模型效果评测体系</span>
+                                </div>
+                                <div class="absolute top-24 left-10 bg-slate-800 border border-slate-600 p-3 rounded shadow-xl z-10 w-64">
+                                    <div class="text-xs font-bold text-blue-400 mb-1">【替换】</div>
+                                    <div class="text-xs text-slate-400">原文：做了很多评测指标</div>
+                                    <div class="text-xs text-slate-400 mt-1">理由：对齐JD要求的闭环体系</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Slide 6: 结语 -->
+        <div class="slide">
+            <div class="text-center w-full max-w-4xl mx-auto">
+                <div class="w-20 h-20 mx-auto mb-8 rounded-2xl bg-indigo-500/20 border border-indigo-500/50 flex items-center justify-center">
+                    <svg class="w-10 h-10 text-indigo-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg>
+                </div>
+                <h2 class="text-5xl font-bold mb-12 text-gradient">
+                    AI 是加速器，<br/>PM 的逻辑思维才是你的护城河。
+                </h2>
+                
+                <div class="grid-2 text-left gap-8">
+                    <div class="p-6 rounded-2xl bg-white/5 border border-white/10">
+                        <div class="text-indigo-400 font-bold mb-2">Step 1</div>
+                        <h4 class="text-xl font-bold text-white mb-2">梳理闭环逻辑</h4>
+                        <p class="text-slate-400 text-sm">抛开具体的执行动作，站在业务顶层，重新审视你的项目价值链条。</p>
+                    </div>
+                    <div class="p-6 rounded-2xl bg-white/5 border border-white/10">
+                        <div class="text-indigo-400 font-bold mb-2">Step 2</div>
+                        <h4 class="text-xl font-bold text-white mb-2">使用 JD Lens 诊断</h4>
+                        <p class="text-slate-400 text-sm">将 JD 视作需求，用 AI 工具进行严苛的匹配测试与优化重构。</p>
+                    </div>
+                </div>
+
+                <div class="mt-16 text-slate-500 font-mono text-sm tracking-widest uppercase">
+                    Thanks for watching
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <div class="controls">
+        <button class="btn-nav" id="btn-prev" onclick="changeSlide(-1)">
+            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path></svg>
+        </button>
+        <button class="btn-nav" id="btn-next" onclick="changeSlide(1)">
+            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path></svg>
+        </button>
+    </div>
+
+    <script>
+        let currentSlide = 0;
+        const slides = document.querySelectorAll('.slide');
+        const progressBar = document.getElementById('progress');
+        const btnPrev = document.getElementById('btn-prev');
+        const btnNext = document.getElementById('btn-next');
+
+        function updateSlides() {
+            slides.forEach((slide, index) => {
+                slide.classList.remove('active', 'prev');
+                if (index === currentSlide) {
+                    slide.classList.add('active');
+                } else if (index < currentSlide) {
+                    slide.classList.add('prev');
+                    // Automatically show fragments for past slides
+                    slide.querySelectorAll('.fragment').forEach(f => f.classList.add('visible'));
+                } else {
+                    // Reset fragments for future slides
+                    slide.querySelectorAll('.fragment').forEach(f => f.classList.remove('visible'));
+                }
+            });
+
+            // Update progress
+            const progress = ((currentSlide + 1) / slides.length) * 100;
+            progressBar.style.width = `${progress}%`;
+
+            // Update buttons
+            btnPrev.disabled = currentSlide === 0;
+            btnNext.disabled = currentSlide === slides.length - 1;
+        }
+
+        function changeSlide(direction) {
+            const currentSlideEl = slides[currentSlide];
+
+            if (direction === 1) {
+                const fragments = currentSlideEl.querySelectorAll('.fragment:not(.visible)');
+                if (fragments.length > 0) {
+                    fragments[0].classList.add('visible');
+                    return;
+                }
+            } else if (direction === -1) {
+                const visibleFragments = currentSlideEl.querySelectorAll('.fragment.visible');
+                if (visibleFragments.length > 0) {
+                    visibleFragments[visibleFragments.length - 1].classList.remove('visible');
+                    return;
+                }
+            }
+
+            currentSlide += direction;
+            if (currentSlide < 0) currentSlide = 0;
+            if (currentSlide >= slides.length) currentSlide = slides.length - 1;
+            updateSlides();
+        }
+
+        // Keyboard navigation
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'ArrowRight' || e.key === 'Space' || e.key === 'Enter') {
+                changeSlide(1);
+            } else if (e.key === 'ArrowLeft') {
+                changeSlide(-1);
+            }
+        });
+
+        // Initialize
+        updateSlides();
+    </script>
+</body>
+</html>
